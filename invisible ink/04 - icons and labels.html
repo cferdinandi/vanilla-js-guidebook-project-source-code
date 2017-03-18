@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<title>Invisible Ink</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<!-- stylesheets -->
+		<link rel="stylesheet" href="styles.css" type="text/css">
+		<style type="text/css">
+			body {
+				max-width: 40em;
+				width: 88%;
+				margin-left: auto;
+				margin-right: auto;
+			}
+
+			.invisible-ink .hide-me {
+				border: 0;
+				clip: rect(0 0 0 0);
+				height: 1px;
+				margin: -1px;
+				overflow: hidden;
+				outline: 0;
+				padding: 0;
+				position: absolute;
+				white-space: nowrap;
+				width: 1px;
+			}
+
+			.hide-me.active {
+				clip: auto;
+				height: auto;
+				margin: 0;
+				overflow: visible;
+				position: static;
+				white-space: normal;
+				width: auto;
+			}
+
+			.click-me-closed,
+			.click-me-open,
+			.invisible-ink .active .click-me-closed {
+				display: none;
+			}
+
+			.invisible-ink .click-me-closed,
+			.invisible-ink .active .click-me-open {
+				display: inline-block;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<div class="hide-me-group">
+
+			<p>
+				<a class="click-me" href="#hide-me">
+					Click Me 1
+					<span class="click-me-closed">+</span>
+					<span class="click-me-open">-</span>
+				</a>
+			</p>
+
+			<div class="hide-me" id="hide-me">
+				<p>1. Here's some content that I'd like to show or hide when the link is clicked.</p>
+			</div>
+
+			<p>
+				<a class="click-me" href="#hide-me-2">
+					<span class="click-me-closed">Read More</span>
+					<span class="click-me-open">Read Less</span>
+				</a>
+			</p>
+
+			<div class="hide-me" id="hide-me-2">
+				<p>2. Here's some content that I'd like to show or hide when the <a href="#">link</a> is clicked.</p>
+			</div>
+
+			<p>
+				<a class="click-me" href="#hide-me-3">
+					Click Me 3
+				</a>
+			</p>
+
+			<div class="hide-me" id="hide-me-3">
+				<p>3. Here's some content that I'd like to show or hide when the link is clicked.</p>
+			</div>
+
+			<p>
+				<a class="click-me" href="#hide-me-4">
+					Click Me 4
+				</a>
+			</p>
+
+			<div class="hide-me" id="hide-me-4">
+				<p>4. Here's some content that I'd like to show or hide when the link is clicked.</p>
+			</div>
+		</div>
+
+
+		<!-- Javascript -->
+		<script>
+			;(function (window, document, undefined) {
+
+				'use strict';
+
+				var supports = 'querySelector' in document && 'addEventListener' in window;
+				if ( !supports ) return;
+
+				// Add class on init
+				document.documentElement.classList.add( 'invisible-ink' );
+
+				/**
+				 * Get the closest matching element up the DOM tree.
+				 * @private
+				 * @param  {Element} elem     Starting element
+				 * @param  {String}  selector Selector to match against
+				 * @return {Boolean|Element}  Returns null if not match found
+				 */
+				var getClosest = function ( elem, selector ) {
+
+					// Element.matches() polyfill
+					if (!Element.prototype.matches) {
+						Element.prototype.matches =
+							Element.prototype.matchesSelector ||
+							Element.prototype.mozMatchesSelector ||
+							Element.prototype.msMatchesSelector ||
+							Element.prototype.oMatchesSelector ||
+							Element.prototype.webkitMatchesSelector ||
+							function(s) {
+								var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+									i = matches.length;
+								while (--i >= 0 && matches.item(i) !== this) {}
+								return i > -1;
+							};
+					}
+
+					// Get closest match
+					for ( ; elem && elem !== document; elem = elem.parentNode ) {
+						if ( elem.matches( selector ) ) return elem;
+					}
+
+					return null;
+
+				};
+
+				/**
+				 * If content is part of a group, close all other content toggles
+				 */
+				var closeContentToggles = function (toggle) {
+					var group = getClosest( toggle, '.hide-me-group' );
+					if ( group ) {
+						var groupToggles = group.querySelectorAll( '.click-me' );
+						for ( var i = 0; i < groupToggles.length; i++ ) {
+							if ( groupToggles[i].hash === toggle.hash ) continue;
+							groupToggles[i].classList.remove( 'active' );
+						}
+					}
+				};
+
+				/**
+				 * If content is part of a group, close all other content areas
+				 */
+				var closeContentGroups = function (content) {
+					var group = getClosest( content, '.hide-me-group' );
+					if ( group ) {
+						var groupContents = group.querySelectorAll( '.hide-me' );
+						for ( var i = 0; i < groupContents.length; i++ ) {
+							if ( groupContents[i].id === content.id ) continue;
+							groupContents[i].classList.remove( 'active' );
+						}
+					}
+				};
+
+				// Show/hide content when toggle is clicked
+				document.addEventListener('click', function (event) {
+
+					// Get the clicked element
+					var toggle = getClosest( event.target, '.click-me' );
+
+					// Make sure a .click-me link was clicked
+					if ( !toggle || !toggle.classList.contains( 'click-me' ) ) return;
+
+					// Prevent default
+					event.preventDefault();
+
+					// Show or hide the content
+					var content = document.querySelector( toggle.hash );
+					if ( !content ) return;
+					content.classList.toggle( 'active' );
+					toggle.classList.toggle( 'active' );
+
+					// If content is active, set focus
+					if ( content.classList.contains( 'active' ) ) {
+						content.focus();
+						if ( document.activeElement.id !== content.id ) {
+							content.setAttribute( 'tabindex', '-1' );
+							content.focus();
+						}
+					}
+
+					// If accordion, close other content area
+					closeContentToggles(toggle);
+					closeContentGroups(content);
+
+				}, false);
+
+				// Open content area if link within is brought into focus
+				document.addEventListener('focus', function (event) {
+					var content = getClosest( event.target, '.hide-me' );
+					if ( !content ) return;
+					content.classList.add( 'active' );
+
+					// Get the content area's toggle
+					var toggle = document.querySelector( 'a[href*="#' + content.id + '"].click-me' );
+					if ( toggle ) {
+						toggle.classList.add( 'active' );
+					}
+
+					// If content is part of a group, close all other content areas
+					closeContentToggles(toggle);
+					closeContentGroups(content);
+				}, true);
+
+			})(window, document);
+		</script>
+
+	</body>
+</html>

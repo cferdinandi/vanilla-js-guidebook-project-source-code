@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<title>Play</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<!-- stylesheets -->
+		<link rel="stylesheet" href="styles.css" type="text/css">
+		<style type="text/css">
+			body {
+				max-width: 40em;
+				width: 88%;
+				margin-left: auto;
+				margin-right: auto;
+			}
+
+			.play.active {
+				color: #808080;
+				cursor: not-allowed;
+				pointer-events: none;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<div class="video" id="video-1">
+			<iframe width="560" height="315" src="https://www.youtube.com/embed/QnM2tVZr7Fs?rel=0" frameborder="0" allowfullscreen></iframe>
+		</div>
+
+		<p><strong>Videos</strong></p>
+
+		<ul>
+			<li>
+				<a class="play active" data-player="#video-1" href="https://www.youtube.com/watch?v=QnM2tVZr7Fs">Who got to the North Pole first?</a>
+			</li>
+			<li>
+				<a class="play" data-player="#video-1" href="https://www.youtube.com/watch?v=QWveXdj6oZU">Rapping, deconstructed</a>
+			</li>
+			<li>
+				<a class="play" data-player="#video-1" href="https://www.youtube.com/watch?v=rNu8XDBSn10">The Difference between the United Kingdom, Great Britain and England Explained</a>
+			</li>
+			<li>
+				<a class="play" data-player="#video-1" href="https://youtu.be/hUhisi2FBuw">The Ingenious Design of the Aluminum Beverage Can</a>
+			</li>
+		</ul>
+
+
+		<div class="video" id="video-2">
+			<iframe width="560" height="315" src="https://www.youtube.com/embed/y9pknU0zv9c?rel=0" frameborder="0" allowfullscreen></iframe>
+		</div>
+
+		<p><strong>Videos</strong></p>
+
+		<ul>
+			<li>
+				<a class="play" data-player="#video-2" href="https://www.youtube.com/watch?v=y9pknU0zv9c&list=PL96C35uN7xGI9HGKHsArwxiOejecVyNem&index=3">1</a>
+			</li>
+			<li>
+				<a class="play" data-player="#video-2" href="https://www.youtube.com/watch?v=MA9Du5l7qV0&index=4&list=PL96C35uN7xGI9HGKHsArwxiOejecVyNem">2</a>
+			</li>
+			<li>
+				<a class="play active" data-player="#video-2" href="https://www.youtube.com/watch?v=TEdsQmjLMKs&list=PL96C35uN7xGI9HGKHsArwxiOejecVyNem&index=6">3</a>
+			</li>
+		</ul>
+
+		<!-- Javascript -->
+		<script>
+			;(function (window, document, undefined) {
+
+				'use strict';
+
+				/**
+				 * Get the closest matching element up the DOM tree.
+				 * @private
+				 * @param  {Element} elem     Starting element
+				 * @param  {String}  selector Selector to match against
+				 * @return {Boolean|Element}  Returns null if not match found
+				 */
+				var getClosest = function ( elem, selector ) {
+
+					// Element.matches() polyfill
+					if (!Element.prototype.matches) {
+						Element.prototype.matches =
+							Element.prototype.matchesSelector ||
+							Element.prototype.mozMatchesSelector ||
+							Element.prototype.msMatchesSelector ||
+							Element.prototype.oMatchesSelector ||
+							Element.prototype.webkitMatchesSelector ||
+							function(s) {
+								var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+									i = matches.length;
+								while (--i >= 0 && matches.item(i) !== this) {}
+								return i > -1;
+							};
+					}
+
+					// Get closest match
+					for ( ; elem && elem !== document; elem = elem.parentNode ) {
+						if ( elem.matches( selector ) ) return elem;
+					}
+
+					return null;
+
+				};
+
+				/**
+				 * Get the value of a query string from a URL
+				 * @param  {String} field The field to get the value of
+				 * @param  {String} url   The URL to get the value from [optional]
+				 * @return {String}       The value
+				 */
+				var getQueryString = function ( field, url ) {
+					var href = url ? url : window.location.href;
+					var reg = new RegExp( '[?&]' + field + '=([^&#]*)', 'i' );
+					var string = reg.exec(href);
+					return string ? string[1] : null;
+				};
+
+				var clickHandler = function (event) {
+
+					// Check to see if a play link was clicked
+					var toggle = getClosest(event.target, '.play');
+					if ( !toggle ) return;
+
+					// Get the video player
+					var playerSelector = toggle.hasAttribute( 'data-player' ) ? toggle.getAttribute( 'data-player' ) : '.video';
+					var player = document.querySelector( playerSelector + ' iframe' );
+					if ( !player ) return;
+
+					// Prevent the default link action
+					event.preventDefault();
+
+					// Get the video ID
+					var id = /youtu.be/.test(toggle.href) ? toggle.href.split('youtu.be/')[1] : getQueryString( 'v', toggle.href );
+
+					// Play video
+					player.src = 'https://www.youtube.com/embed/' + id + '?rel=0&autoplay=1';
+
+					// Deactivate currently active link
+					var activeSelector = toggle.hasAttribute( 'data-player' ) ? '[data-player="' + toggle.getAttribute( 'data-player' ) + '"]' : '';
+					var active = document.querySelector( activeSelector + '.play.active' );
+					if ( active ) {
+						active.classList.remove( 'active' );
+					}
+
+					// Activate current video
+					toggle.classList.add( 'active' );
+
+					window.location.hash = '#' + id;
+
+				};
+
+				if ( window.location.hash ) {
+
+					var links = document.querySelectorAll( '.play' );
+
+					for (var i = 0; i < links.length; i++) {
+
+						// Check if hash matches video ID
+						var id = /youtu.be/.test(links[i].href) ? links[i].href.split('youtu.be/')[1] : getQueryString( 'v', links[i].href );
+						if ( window.location.hash.replace('#', '') !== id ) continue;
+
+						// Get the video player
+						var playerSelector = links[i].hasAttribute( 'data-player' ) ? links[i].getAttribute( 'data-player' ) : '.video';
+						var player = document.querySelector( playerSelector + ' iframe' );
+						if ( !player ) return;
+
+						// Play video
+						player.src = 'https://www.youtube.com/embed/' + window.location.hash.replace('#', '') + '?rel=0';
+
+						// Deactivate currently active link
+						var activeSelector = links[i].hasAttribute( 'data-player' ) ? '[data-player="' + links[i].getAttribute( 'data-player' ) + '"]' : '';
+						var active = document.querySelector( activeSelector + '.play.active' );
+						if ( active ) {
+							active.classList.remove( 'active' );
+						}
+
+						// Activate current video
+						links[i].classList.add( 'active' );
+
+					}
+
+				}
+
+				document.addEventListener('click', clickHandler, false);
+
+			})(window, document);
+		</script>
+
+	</body>
+</html>
